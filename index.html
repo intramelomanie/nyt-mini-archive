@@ -37,7 +37,14 @@
             --hover-color: #ff1493;
         }
 
-        .container {
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .calendar-container {
             background-color: var(--bg-color);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -56,15 +63,15 @@
             letter-spacing: 0.5px;
         }
 
-        .controls {
+        .controls, .feature-buttons {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background-color: var(--secondary-color);
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
         }
 
         select, button {
+            font-family: 'Inter', sans-serif;
             padding: 10px;
             font-size: 16px;
             border: 2px solid var(--primary-color);
@@ -156,69 +163,10 @@
             background-color: var(--hover-color);
         }
 
-        .feature-buttons {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px;
-            background-color: var(--secondary-color);
-        }
-
-        .feature-btn {
-            padding: 10px;
-            font-size: 14px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .feature-btn:hover {
-            background-color: var(--hover-color);
-        }
-
-        .stats-modal, .preview-modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-
-        .modal-content {
-            background-color: var(--bg-color);
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 10px;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
         .preview {
             width: 50px;
             height: 50px;
-            background-color: #ddd;
+            background-color: var(--secondary-color);
             position: absolute;
             top: -60px;
             left: 50%;
@@ -226,54 +174,48 @@
             border-radius: 5px;
             display: none;
             z-index: 10;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="title">NYT Mini Archive</div>
+    <div class="main-container">
         <div class="controls">
             <select id="monthSelect"></select>
             <select id="yearSelect"></select>
-            <button class="today-btn" id="todayBtn">Today</button>
+            <button id="todayBtn">Today</button>
         </div>
-        <div class="calendar">
-            <div class="header">
-                <button class="nav-btn" id="prevMonth">&#8249;</button>
-                <span class="current-month" id="currentMonth"></span>
-                <button class="nav-btn" id="nextMonth">&#8250;</button>
+        <div class="calendar-container">
+            <div class="title">NYT Mini Archive</div>
+            <div class="calendar">
+                <div class="header">
+                    <button class="nav-btn" id="prevMonth">&#8249;</button>
+                    <span class="current-month" id="currentMonth"></span>
+                    <button class="nav-btn" id="nextMonth">&#8250;</button>
+                </div>
+                <div class="days" id="calendarDays"></div>
             </div>
-            <div class="days" id="calendarDays"></div>
         </div>
         <div class="feature-buttons">
-            <button class="feature-btn" id="statsBtn">Statistics</button>
-            <button class="feature-btn" id="randomBtn">Random Puzzle</button>
-            <button class="feature-btn" id="darkModeBtn">Dark Mode</button>
-        </div>
-    </div>
-
-    <div id="statsModal" class="stats-modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Your Statistics</h2>
-            <p id="statsContent"></p>
-        </div>
-    </div>
-
-    <div id="previewModal" class="preview-modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Puzzle Preview</h2>
-            <div id="previewContent"></div>
+            <button id="randomBtn">Random Puzzle</button>
+            <!-- <button id="darkModeBtn">Dark Mode</button> -->
+            <button id="themeToggle">☀️</button>
         </div>
     </div>
 
     <script>
         const DateTime = luxon.DateTime;
         let currentDate = DateTime.local();
+        
         const today = DateTime.local().startOf('day');
         const firstPuzzleDate = DateTime.fromObject({ year: 2015, month: 11, day: 16 });
 
+        const themeToggle = document.getElementById('themeToggle');
+        let isDarkMode = false;
+        
         function updateCalendar() {
             const monthYear = document.getElementById('currentMonth');
             monthYear.textContent = currentDate.toFormat('MMMM yyyy');
@@ -332,7 +274,6 @@
             const puzzleDate = currentDate.set({ day });
             const url = `https://www.nytimes.com/crosswords/game/mini/${puzzleDate.toFormat('yyyy/MM/dd')}`;
             window.open(url, '_blank');
-            updateStats(puzzleDate);
         }
 
         function updateDropdowns() {
@@ -362,44 +303,10 @@
             }
         }
 
-        function updateStats(puzzleDate) {
-            let stats = JSON.parse(localStorage.getItem('puzzleStats')) || {};
-            const dateString = puzzleDate.toISODate();
-            stats[dateString] = (stats[dateString] || 0) + 1;
-            localStorage.setItem('puzzleStats', JSON.stringify(stats));
-        }
-
-        function showStats() {
-            const stats = JSON.parse(localStorage.getItem('puzzleStats')) || {};
-            const totalPuzzles = Object.values(stats).reduce((a, b) => a + b, 0);
-            const uniquePuzzles = Object.keys(stats).length;
-
-            const statsContent = document.getElementById('statsContent');
-            statsContent.innerHTML = `
-                <p>Total puzzles attempted: ${totalPuzzles}</p>
-                <p>Unique puzzles attempted: ${uniquePuzzles}</p>
-                <p>Most attempted puzzle: ${getMostAttemptedPuzzle(stats)}</p>
-            `;
-
-            document.getElementById('statsModal').style.display = 'block';
-        }
-
-        function getMostAttemptedPuzzle(stats) {
-            let maxAttempts = 0;
-            let maxDate = '';
-            for (let date in stats) {
-                if (stats[date] > maxAttempts) {
-                    maxAttempts = stats[date];
-                    maxDate = date;
-                }
-            }
-            return maxDate ? `${maxDate} (${maxAttempts} times)` : 'None';
-        }
-
         function showPreview(day) {
             const puzzleDate = currentDate.set({ day });
             const previewElement = event.target.querySelector('.preview');
-            previewElement.style.display = 'block';
+            previewElement.style.display = 'flex';
             previewElement.textContent = puzzleDate.toFormat('MM/dd');
         }
 
@@ -420,9 +327,16 @@
         }
 
         function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        }
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '🌙';
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.textContent = '☀️';
+            }
+            <!-- localStorage.setItem('darkMode', document.body.classList.contains('dark-mode')); -->
+        });
 
         // Event Listeners
         document.getElementById('prevMonth').addEventListener('click', () => {
@@ -449,26 +363,10 @@
             currentDate = DateTime.local();
             updateCalendar();
         });
-// Event Listeners (continued)
-        document.getElementById('statsBtn').addEventListener('click', showStats);
 
         document.getElementById('randomBtn').addEventListener('click', getRandomPuzzle);
 
-        document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
-
-        // Close button for modals
-        document.querySelectorAll('.close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', function() {
-                this.closest('.stats-modal, .preview-modal').style.display = 'none';
-            });
-        });
-
-        // Close modals when clicking outside
-        window.addEventListener('click', function(event) {
-            if (event.target.className === 'stats-modal' || event.target.className === 'preview-modal') {
-                event.target.style.display = 'none';
-            }
-        });
+        document.getElementById('themeToggle').addEventListener('click', toggleDarkMode);
 
         // Initialize
         function initialize() {
