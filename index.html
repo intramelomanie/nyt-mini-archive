@@ -201,21 +201,16 @@
         </div>
         <div class="feature-buttons">
             <button id="randomBtn">Random Puzzle</button>
-            <!-- <button id="darkModeBtn">Dark Mode</button> -->
-            <button id="themeToggle">☀️</button>
+            <button id="darkModeBtn">Dark Mode</button>
         </div>
     </div>
 
     <script>
         const DateTime = luxon.DateTime;
         let currentDate = DateTime.local();
-        
         const today = DateTime.local().startOf('day');
         const firstPuzzleDate = DateTime.fromObject({ year: 2015, month: 11, day: 16 });
 
-        const themeToggle = document.getElementById('themeToggle');
-        let isDarkMode = false;
-        
         function updateCalendar() {
             const monthYear = document.getElementById('currentMonth');
             monthYear.textContent = currentDate.toFormat('MMMM yyyy');
@@ -327,16 +322,9 @@
         }
 
         function toggleDarkMode() {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                document.body.classList.add('dark-mode');
-                themeToggle.textContent = '🌙';
-            } else {
-                document.body.classList.remove('dark-mode');
-                themeToggle.textContent = '☀️';
-            }
-            <!-- localStorage.setItem('darkMode', document.body.classList.contains('dark-mode')); -->
-        });
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
 
         // Event Listeners
         document.getElementById('prevMonth').addEventListener('click', () => {
@@ -366,7 +354,7 @@
 
         document.getElementById('randomBtn').addEventListener('click', getRandomPuzzle);
 
-        document.getElementById('themeToggle').addEventListener('click', toggleDarkMode);
+        document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
 
         // Initialize
         function initialize() {
