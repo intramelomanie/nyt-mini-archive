@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYT Mini Archive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .calendar {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 380px;
+        }
+        .title {
+            background-color: #ff69b4;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .header {
+            background-color: #ff69b4;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            padding: 10px;
+        }
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 50%;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .day:not(.day-label):hover {
+            background-color: #fff0f5;
+        }
+        .day-label {
+            font-weight: 500;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        .future {
+            color: #bdc1c6;
+            cursor: not-allowed;
+        }
+        .future:hover {
+            background-color: transparent;
+        }
+        button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            padding: 0 10px;
+        }
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar">
+        <div class="title">NYT Mini Archive</div>
+        <div class="header">
+            <button id="prevMonth">&#8249;</button>
+            <span id="currentMonth"></span>
+            <button id="nextMonth">&#8250;</button>
+        </div>
+        <div class="days" id="calendarDays"></div>
+    </div>
+
+    <script>
+        const DateTime = luxon.DateTime;
+        let currentDate = DateTime.local();
+        const today = DateTime.local().startOf('day');
+
+        function updateCalendar() {
+            const monthYear = document.getElementById('currentMonth');
+            monthYear.textContent = currentDate.toFormat('MMMM yyyy');
+
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = '';
+
+            const daysInMonth = currentDate.daysInMonth;
+            const firstDayOfMonth = currentDate.startOf('month').weekday;
+
+            // Add day labels
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(day => {
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'day day-label';
+                dayLabel.textContent = day;
+                calendarDays.appendChild(dayLabel);
+            });
+
+            // Add empty cells for days before the first of the month
+            for (let i = 1; i < firstDayOfMonth; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'day';
+                calendarDays.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day';
+                dayElement.textContent = day;
+
+                const currentDay = currentDate.set({ day });
+                if (currentDay > today) {
+                    dayElement.classList.add('future');
+                } else {
+                    dayElement.addEventListener('click', () => openPuzzle(day));
+                }
+
+                calendarDays.appendChild(dayElement);
+            }
+        }
+
+        function openPuzzle(day) {
+            const puzzleDate = currentDate.set({ day });
+            const url = `https://www.nytimes.com/crosswords/game/mini/${puzzleDate.toFormat('yyyy/MM/dd')}`;
+            window.open(url, '_blank');
+        }
+
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate = currentDate.minus({ months: 1 });
+            updateCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate = currentDate.plus({ months: 1 });
+            updateCalendar();
+        });
+
+        updateCalendar();
+    </script>
+</body>
+</html>
