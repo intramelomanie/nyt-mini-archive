@@ -12,40 +12,89 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
+            background-color: #f7f7f7;
+            color: #333;
         }
-        .calendar {
+        .container {
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             width: 380px;
         }
         .title {
             background-color: #ff69b4;
             color: white;
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
+            letter-spacing: 0.5px;
         }
-        .header {
-            background-color: #ff69b4;
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            font-size: 20px;
+        .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 20px;
+            background-color: #fff0f5;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ff69b4;
+            border-radius: 8px;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        select:hover, select:focus {
+            border-color: #ff1493;
+            outline: none;
+        }
+        .today-btn {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .today-btn:hover {
+            background-color: #ff1493;
+        }
+        .calendar {
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .current-month {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #ff69b4;
+            transition: color 0.3s ease;
+        }
+        .nav-btn:hover {
+            color: #ff1493;
         }
         .days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            padding: 10px;
+            gap: 8px;
         }
         .day {
             aspect-ratio: 1;
@@ -55,52 +104,56 @@
             cursor: pointer;
             font-size: 16px;
             border-radius: 50%;
-            transition: background-color 0.3s, color 0.3s;
+            transition: all 0.3s ease;
         }
         .day:not(.day-label):hover {
             background-color: #fff0f5;
         }
         .day-label {
-            font-weight: 500;
-            color: #5f6368;
+            font-weight: 600;
+            color: #ff69b4;
             font-size: 14px;
         }
-        .future {
-            color: #bdc1c6;
+        .disabled {
+            color: #ccc;
             cursor: not-allowed;
         }
-        .future:hover {
+        .disabled:hover {
             background-color: transparent;
         }
-        button {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
+        .today {
+            background-color: #ff69b4;
             color: white;
-            padding: 0 10px;
+            font-weight: 600;
         }
-        button:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
+        .today:hover {
+            background-color: #ff1493;
         }
     </style>
 </head>
 <body>
-    <div class="calendar">
+    <div class="container">
         <div class="title">NYT Mini Archive</div>
-        <div class="header">
-            <button id="prevMonth">&#8249;</button>
-            <span id="currentMonth"></span>
-            <button id="nextMonth">&#8250;</button>
+        <div class="controls">
+            <select id="monthSelect"></select>
+            <select id="yearSelect"></select>
+            <button class="today-btn" id="todayBtn">Today</button>
         </div>
-        <div class="days" id="calendarDays"></div>
+        <div class="calendar">
+            <div class="header">
+                <button class="nav-btn" id="prevMonth">&#8249;</button>
+                <span class="current-month" id="currentMonth"></span>
+                <button class="nav-btn" id="nextMonth">&#8250;</button>
+            </div>
+            <div class="days" id="calendarDays"></div>
+        </div>
     </div>
 
     <script>
         const DateTime = luxon.DateTime;
         let currentDate = DateTime.local();
         const today = DateTime.local().startOf('day');
+        const firstPuzzleDate = DateTime.fromObject({ year: 2015, month: 11, day: 16 });
 
         function updateCalendar() {
             const monthYear = document.getElementById('currentMonth');
@@ -134,20 +187,53 @@
                 dayElement.textContent = day;
 
                 const currentDay = currentDate.set({ day });
-                if (currentDay > today) {
-                    dayElement.classList.add('future');
+                if (currentDay > today || currentDay < firstPuzzleDate) {
+                    dayElement.classList.add('disabled');
                 } else {
                     dayElement.addEventListener('click', () => openPuzzle(day));
                 }
 
+                if (currentDay.hasSame(today, 'day')) {
+                    dayElement.classList.add('today');
+                }
+
                 calendarDays.appendChild(dayElement);
             }
+
+            updateDropdowns();
         }
 
         function openPuzzle(day) {
             const puzzleDate = currentDate.set({ day });
             const url = `https://www.nytimes.com/crosswords/game/mini/${puzzleDate.toFormat('yyyy/MM/dd')}`;
             window.open(url, '_blank');
+        }
+
+        function updateDropdowns() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+
+            // Clear existing options
+            monthSelect.innerHTML = '';
+            yearSelect.innerHTML = '';
+
+            // Populate month dropdown
+            for (let i = 1; i <= 12; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = DateTime.local(2000, i, 1).toFormat('MMMM');
+                option.selected = i === currentDate.month;
+                monthSelect.appendChild(option);
+            }
+
+            // Populate year dropdown
+            for (let year = firstPuzzleDate.year; year <= today.year; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                option.selected = year === currentDate.year;
+                yearSelect.appendChild(option);
+            }
         }
 
         document.getElementById('prevMonth').addEventListener('click', () => {
@@ -157,6 +243,21 @@
 
         document.getElementById('nextMonth').addEventListener('click', () => {
             currentDate = currentDate.plus({ months: 1 });
+            updateCalendar();
+        });
+
+        document.getElementById('monthSelect').addEventListener('change', (e) => {
+            currentDate = currentDate.set({ month: parseInt(e.target.value) });
+            updateCalendar();
+        });
+
+        document.getElementById('yearSelect').addEventListener('change', (e) => {
+            currentDate = currentDate.set({ year: parseInt(e.target.value) });
+            updateCalendar();
+        });
+
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            currentDate = DateTime.local();
             updateCalendar();
         });
 
